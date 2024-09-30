@@ -2,18 +2,23 @@ from telebot import TeleBot, types
 from wordcloud import WordCloud
 import json
 from io import BytesIO
-
+import random
 import matplotlib.pyplot as plt
 
 # Токен бота
 TOKEN = '7698122571:AAHDn4aS3kKntp8uk-c9edvxIsRyQqclCVk'
 bot = TeleBot(TOKEN)
 
+funny_responses = [
+    "Давай без разговорчиков...",
+    "Без CSV файла не разговариваю с людьми",
+    "Давай вернемся к CSV!",
+    "Не отвлекай меня! Я ведь жду твой CSV файл.",
+    "Отправь мне CSV файл!"
+]
 
 def main_menu(chat_id):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    bot.send_message(chat_id, "Добро пожаловать! Загрузите CSV файл с отзывами сотрудников.",
-                     reply_markup=markup)
+    bot.send_message(chat_id, "Добро пожаловать! Для получения облака слов из отзывов сотрудников отправьте мне CSV файл.")
 
 
 @bot.message_handler(commands=['start'])
@@ -23,6 +28,8 @@ def start(message):
 
 @bot.message_handler(content_types=['document'])
 def handle_document(message):
+    if message.document.mime_type != 'text/csv':
+        bot.reply_to(message, "Я не принимаю такой формат файла. Отправьте CSV.")
     try:
         # Получаем файл
         file_info = bot.get_file(message.document.file_id)
@@ -42,9 +49,12 @@ def handle_document(message):
 
         # Отправка картинки
         bot.send_photo(message.chat.id, buf_cloud(model_output))
-
     except Exception as e:
         bot.reply_to(message, f"Произошла ошибка: {e}")
+
+@bot.message_handler(func=lambda message: True)
+def handle_text(message):
+    bot.reply_to(message, random.choice(funny_responses))
 
 def buf_cloud(model_output):
     text = ""
