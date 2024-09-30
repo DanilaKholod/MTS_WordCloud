@@ -30,6 +30,7 @@ def start(message):
 def handle_document(message):
     if message.document.mime_type != 'text/csv':
         bot.reply_to(message, "Я не принимаю такой формат файла. Отправьте CSV.")
+        return
     try:
         # Получаем файл
         file_info = bot.get_file(message.document.file_id)
