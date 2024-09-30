@@ -12,32 +12,12 @@ bot = TeleBot(TOKEN)
 
 def main_menu(chat_id):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    start_button = types.KeyboardButton("Начать")
-    markup.add(start_button)
-    bot.send_message(chat_id, "Добро пожаловать! Нажмите 'Начать' для загрузки CSV файла с отзывами сотрудников.",
+    bot.send_message(chat_id, "Добро пожаловать! Загрузите CSV файл с отзывами сотрудников.",
                      reply_markup=markup)
 
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    main_menu(message.chat.id)
-
-
-@bot.message_handler(func=lambda message: message.text == "Начать")
-def ask_for_file(message):
-    bot.send_message(message.chat.id, "Загрузите CSV файл с отзывами сотрудников.",
-                     reply_markup=types.ReplyKeyboardRemove())
-    bot.send_message(message.chat.id, "Вы можете вернуться в главное меню, нажав 'Меню'.")
-
-    # Создаем новое меню
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    menu_button = types.KeyboardButton("Меню")
-    markup.add(menu_button)
-    bot.send_message(message.chat.id, "Если хотите вернуться, нажмите 'Меню'.", reply_markup=markup)
-
-
-@bot.message_handler(func=lambda message: message.text == "Меню")
-def return_to_menu(message):
     main_menu(message.chat.id)
 
 
