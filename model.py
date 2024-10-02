@@ -67,10 +67,11 @@ def model(file_buffer):
     navec = Navec.load('navec_hudlit_v1_12B_500K_300d_100q.tar')
 
     feedbacks['emb'] = [navec['<pad>']] * len(feedbacks)
+    feedbacks['decompos'] = [''] * len(feedbacks)
 
     for i in range(len(feedbacks)):
         feedbacks['emb'][i] = question_to_vec(feedbacks['Отзывы'].iloc[i], navec, preprocess)
-
+        feedbacks['decompos'][i] = preprocess(feedbacks['Отзывы'][i], stop_words, punctuation_marks, morph)
 
     vectors = np.array(feedbacks['emb'].tolist())
 
@@ -79,20 +80,16 @@ def model(file_buffer):
     feedbacks['stand_emb'] = pd.DataFrame(embeddings_scaled).apply(lambda row: row.tolist(), axis=1)
     feedbacks = pd.concat([feedbacks, pd.DataFrame(embeddings_scaled)], axis=1)
 
-    feedbacks_initial = feedbacks[['Отзывы','emb','stand_emb']]
-    feedbacks= feedbacks_initial
 
-    clustering = DBSCAN(eps=15, min_samples=6, n_jobs = -1).fit(feedbacks.iloc[:,3:303])
-    cluster_labels = clustering.fit_predict(feedbacks.iloc[:,3:303])
+    clustering = DBSCAN(eps=15, min_samples=6, n_jobs = -1).fit(feedbacks.iloc[:,4:304])
+    cluster_labels = clustering.fit_predict(feedbacks.iloc[:,4:304])
+
     feedbacks['label'] = cluster_labels
 
-    feedbacks['decompos'] = [''] * len(feedbacks)
-    for i in range(len(feedbacks)):
-        feedbacks['decompos'][i] = preprocess(feedbacks['Отзывы'][i], stop_words, punctuation_marks, morph)
 
     k = 5
-    nbrs = NearestNeighbors(n_neighbors=k).fit(feedbacks.iloc[:, 3:303])
-    distances, indices = nbrs.kneighbors(feedbacks.iloc[:, 3:303])
+    nbrs = NearestNeighbors(n_neighbors=k).fit(feedbacks.iloc[:, 4:304])
+    distances, indices = nbrs.kneighbors(feedbacks.iloc[:, 4:304])
     distances = np.sort(distances[:, k - 1], axis=0)
     result = feedbacks[['label','decompos']].groupby('label')['decompos'].apply(most_common_word).reset_index()
 
@@ -103,16 +100,6 @@ def model(file_buffer):
     result['most_common_word'] = np.where(result['label'] == -1, 'другое', result['most_common_word'] )
 
     feedbacks = pd.merge(feedbacks, result, on='label', how='left')
-
-    # Получаем последние 3 колонки
-    last_three_cols = feedbacks.columns[-3:]
-
-    other_cols = feedbacks.columns[:-3]
-
-    new_order = last_three_cols.tolist() + other_cols.tolist()
-
-    # Переставляем колонки в DataFrame
-    feedbacks = feedbacks[new_order]
 
     word_counts = feedbacks['most_common_word'].value_counts().to_dict()
     return word_counts
