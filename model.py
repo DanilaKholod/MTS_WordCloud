@@ -14,8 +14,12 @@ from sklearn.neighbors import NearestNeighbors
 from collections import Counter
 
 
-nltk.download('punkt')
+punctuation_marks = ['!', ',', '(', ')', ':', '-', '?', '.', '..', '...']
+stop_words = stopwords.words("russian")
+morph = pymorphy3.MorphAnalyzer()
+nltk.download('punkt_tab')
 nltk.download('stopwords')
+
 def preprocess(text, stop_words, punctuation_marks, morph):
     tokens = word_tokenize(text.lower())
     preprocessed_text = []
@@ -58,12 +62,9 @@ def most_common_word(group):
     else:
         None
 
-def model(file_path):
-    feedbacks = pd.read_csv(file_path)
+def model(file_buffer):
+    feedbacks = pd.read_csv(file_buffer)
     navec = Navec.load('navec_hudlit_v1_12B_500K_300d_100q.tar')
-
-    punctuation_marks = ['!', ',', '(', ')', ':', '-', '?', '.', '..', '...']
-    stop_words = stopwords.words("russian")
     morph = pymorphy3.MorphAnalyzer()
 
     feedbacks['emb'] = [navec['<pad>']] * len(feedbacks)

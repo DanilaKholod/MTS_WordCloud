@@ -4,7 +4,8 @@ import json
 from io import BytesIO
 import random
 import matplotlib.pyplot as plt
-import  model
+import model
+import os
 
 # Токен бота
 TOKEN = '7698122571:AAHDn4aS3kKntp8uk-c9edvxIsRyQqclCVk'
@@ -35,9 +36,12 @@ def handle_document(message):
     try:
         # Получаем файл
         file_info = bot.get_file(message.document.file_id)
-        print(file_info.file_path)
-        model_output = model.model(file_info.file_path)
+        file_path = file_info.file_path
 
+        # Скачиваем файл
+        downloaded_file = bot.download_file(file_path)
+        file_buffer = BytesIO(downloaded_file)
+        model_output = model.model(file_buffer)
 
         # Заглушка в виде словаря
         '''model_output = {
