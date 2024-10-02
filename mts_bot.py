@@ -43,14 +43,6 @@ def handle_document(message):
         file_buffer = BytesIO(downloaded_file)
         model_output = model.model(file_buffer)
 
-        # Заглушка в виде словаря
-        '''model_output = {
-                        "Зарплата": 34,
-                        "Опыт": 25,
-                        "Удовольствие": 14,
-                        "Общение": 21
-                        } '''
-
         # Отправка картинки
         bot.send_photo(message.chat.id, buf_cloud(model_output))
     except Exception as e:

@@ -17,7 +17,7 @@ from collections import Counter
 punctuation_marks = ['!', ',', '(', ')', ':', '-', '?', '.', '..', '...']
 stop_words = stopwords.words("russian")
 morph = pymorphy3.MorphAnalyzer()
-nltk.download('punkt_tab')
+nltk.download('punkt')
 nltk.download('stopwords')
 
 def preprocess(text, stop_words, punctuation_marks, morph):
@@ -65,12 +65,12 @@ def most_common_word(group):
 def model(file_buffer):
     feedbacks = pd.read_csv(file_buffer)
     navec = Navec.load('navec_hudlit_v1_12B_500K_300d_100q.tar')
-    morph = pymorphy3.MorphAnalyzer()
 
     feedbacks['emb'] = [navec['<pad>']] * len(feedbacks)
 
     for i in range(len(feedbacks)):
         feedbacks['emb'][i] = question_to_vec(feedbacks['Отзывы'].iloc[i], navec, preprocess)
+
 
     vectors = np.array(feedbacks['emb'].tolist())
 
@@ -80,14 +80,7 @@ def model(file_buffer):
     feedbacks = pd.concat([feedbacks, pd.DataFrame(embeddings_scaled)], axis=1)
 
     feedbacks_initial = feedbacks[['Отзывы','emb','stand_emb']]
-
     feedbacks= feedbacks_initial
-
-    k = 5
-    nbrs = NearestNeighbors(n_neighbors=k).fit(feedbacks.iloc[:,3:303])
-    distances, indices = nbrs.kneighbors(feedbacks.iloc[:,3:303])
-    distances = np.sort(distances[:, k - 1], axis=0)
-
 
     clustering = DBSCAN(eps=15, min_samples=6, n_jobs = -1).fit(feedbacks.iloc[:,3:303])
     cluster_labels = clustering.fit_predict(feedbacks.iloc[:,3:303])
@@ -97,6 +90,10 @@ def model(file_buffer):
     for i in range(len(feedbacks)):
         feedbacks['decompos'][i] = preprocess(feedbacks['Отзывы'][i], stop_words, punctuation_marks, morph)
 
+    k = 5
+    nbrs = NearestNeighbors(n_neighbors=k).fit(feedbacks.iloc[:, 3:303])
+    distances, indices = nbrs.kneighbors(feedbacks.iloc[:, 3:303])
+    distances = np.sort(distances[:, k - 1], axis=0)
     result = feedbacks[['label','decompos']].groupby('label')['decompos'].apply(most_common_word).reset_index()
 
     result.columns = ['label', 'most_common_word']
@@ -120,3 +117,4 @@ def model(file_buffer):
     word_counts = feedbacks['most_common_word'].value_counts().to_dict()
     return word_counts
 
+print(model('dataset1000.csv'))
