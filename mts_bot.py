@@ -1,11 +1,9 @@
 from telebot import TeleBot, types
 from wordcloud import WordCloud
-import json
 from io import BytesIO
 import random
 import matplotlib.pyplot as plt
 import model
-import os
 import matplotlib
 
 matplotlib.use('agg')
@@ -13,6 +11,9 @@ matplotlib.use('agg')
 # Токен бота
 TOKEN = '7698122571:AAHDn4aS3kKntp8uk-c9edvxIsRyQqclCVk'
 bot = TeleBot(TOKEN)
+
+# Состояние обработки
+processing_users = set()  # Хранит ID пользователей, которые обрабатываются
 
 funny_responses = [
     "Давай без разговорчиков...",
@@ -22,9 +23,10 @@ funny_responses = [
     "Отправь мне CSV файл!"
 ]
 
-def main_menu(chat_id):
-    bot.send_message(chat_id, "Добро пожаловать! Для получения облака слов из отзывов сотрудников отправьте мне CSV файл.")
 
+def main_menu(chat_id):
+    bot.send_message(chat_id,
+                     "Добро пожаловать! Для получения облака слов из отзывов сотрудников отправьте мне CSV файл.")
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -36,7 +38,14 @@ def handle_document(message):
     if message.document.mime_type != 'text/csv':
         bot.reply_to(message, "Я не принимаю такой формат файла. Отправьте CSV.")
         return
+
+    if message.chat.id in processing_users:
+        bot.reply_to(message, "Я все еще обрабатываю предыдущий файл. Пожалуйста, подождите.")
+        return
+
     try:
+        processing_users.add(message.chat.id)  # Добавляем пользователя в список обработчиков
+
         # Получаем файл
         file_info = bot.get_file(message.document.file_id)
         file_path = file_info.file_path
@@ -48,19 +57,25 @@ def handle_document(message):
 
         # Отправка картинки
         bot.send_photo(message.chat.id, buf_cloud(model_output))
+
     except Exception as e:
         bot.reply_to(message, f"Произошла ошибка: {e}")
+
+    finally:
+        processing_users.remove(message.chat.id)  # Удаляем пользователя из списка, после обработки
+
 
 @bot.message_handler(func=lambda message: True)
 def handle_text(message):
     bot.reply_to(message, random.choice(funny_responses))
 
+
 def buf_cloud(model_output):
     text = ""
     for word in model_output:
         text += (word + "  ") * model_output[word]
-    wordcloud = WordCloud(width = 2000,
-                          height = 1500,
+    wordcloud = WordCloud(width=2000,
+                          height=1500,
                           random_state=1,
                           background_color='white',
                           margin=20,
@@ -74,6 +89,7 @@ def buf_cloud(model_output):
     plt.close()
     buf.seek(0)
     return buf
+
 
 # Запуск бота
 bot.polling(none_stop=True, interval=0)
