@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from navec import Navec
 import pymorphy3
-import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from sklearn.preprocessing import StandardScaler
