@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from navec import Navec
 import pymorphy3
+import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from sklearn.preprocessing import StandardScaler
@@ -12,6 +13,8 @@ from collections import Counter
 punctuation_marks = ['!', ',', '(', ')', ':', '-', '?', '.', '..', '...', '—']
 stop_words = stopwords.words("russian")
 morph = pymorphy3.MorphAnalyzer()
+nltk.download('punkt_tab')
+nltk.download('stopwords')
 
 def preprocess(text, stop_words, punctuation_marks, morph):
     tokens = word_tokenize(text.lower())
