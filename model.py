@@ -13,8 +13,6 @@ from collections import Counter
 punctuation_marks = ['!', ',', '(', ')', ':', '-', '?', '.', '..', '...', '—']
 stop_words = stopwords.words("russian")
 morph = pymorphy3.MorphAnalyzer()
-nltk.download('punkt')
-nltk.download('stopwords')
 
 def preprocess(text, stop_words, punctuation_marks, morph):
     tokens = word_tokenize(text.lower())
