@@ -4,6 +4,7 @@ import json
 from io import BytesIO
 import random
 import matplotlib.pyplot as plt
+import  model
 
 # Токен бота
 TOKEN = '7698122571:AAHDn4aS3kKntp8uk-c9edvxIsRyQqclCVk'
@@ -34,19 +35,17 @@ def handle_document(message):
     try:
         # Получаем файл
         file_info = bot.get_file(message.document.file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-
-
-        # Здесь должна быть модель
+        print(file_info.file_path)
+        model_output = model.model(file_info.file_path)
 
 
         # Заглушка в виде словаря
-        model_output = {
+        '''model_output = {
                         "Зарплата": 34,
                         "Опыт": 25,
                         "Удовольствие": 14,
                         "Общение": 21
-                        }
+                        } '''
 
         # Отправка картинки
         bot.send_photo(message.chat.id, buf_cloud(model_output))
