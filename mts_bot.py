@@ -6,6 +6,9 @@ import random
 import matplotlib.pyplot as plt
 import model
 import os
+import matplotlib
+
+matplotlib.use('agg')
 
 # Токен бота
 TOKEN = '7698122571:AAHDn4aS3kKntp8uk-c9edvxIsRyQqclCVk'
@@ -59,7 +62,7 @@ def buf_cloud(model_output):
     wordcloud = WordCloud(width = 2000,
                           height = 1500,
                           random_state=1,
-                          background_color='black',
+                          background_color='white',
                           margin=20,
                           colormap='Pastel1',
                           collocations=False).generate(text)

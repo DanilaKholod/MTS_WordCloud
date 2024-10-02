@@ -6,11 +6,7 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from transformers import BertTokenizer, BertModel
-import torch
 from sklearn.cluster import DBSCAN
-from sklearn.neighbors import NearestNeighbors
 from collections import Counter
 
 
@@ -64,14 +60,21 @@ def most_common_word(group):
 
 def model(file_buffer):
     feedbacks = pd.read_csv(file_buffer)
+    feedbacks = feedbacks.dropna(how='any')
+    feedbacks.columns.values[0] = 'Отзывы'
     navec = Navec.load('navec_hudlit_v1_12B_500K_300d_100q.tar')
 
     feedbacks['emb'] = [navec['<pad>']] * len(feedbacks)
     feedbacks['decompos'] = [''] * len(feedbacks)
 
+    decomp = []
+    emb = []
     for i in range(len(feedbacks)):
-        feedbacks['emb'][i] = question_to_vec(feedbacks['Отзывы'].iloc[i], navec, preprocess)
-        feedbacks['decompos'][i] = preprocess(feedbacks['Отзывы'][i], stop_words, punctuation_marks, morph)
+        decomp.append(preprocess(feedbacks['Отзывы'][i], stop_words, punctuation_marks, morph));
+        emb.append(question_to_vec(feedbacks['Отзывы'].iloc[i], navec, preprocess));
+    feedbacks['decompos'] = decomp
+    feedbacks['emb'] = emb
+
 
     vectors = np.array(feedbacks['emb'].tolist())
 
@@ -80,19 +83,11 @@ def model(file_buffer):
     feedbacks['stand_emb'] = pd.DataFrame(embeddings_scaled).apply(lambda row: row.tolist(), axis=1)
     feedbacks = pd.concat([feedbacks, pd.DataFrame(embeddings_scaled)], axis=1)
 
-
-    clustering = DBSCAN(eps=15, min_samples=6, n_jobs = -1).fit(feedbacks.iloc[:,4:304])
+    clustering = DBSCAN(eps=4.5, min_samples=1, n_jobs = 1, algorithm= 'kd_tree', leaf_size=60).fit(feedbacks.iloc[:,4:304])
     cluster_labels = clustering.fit_predict(feedbacks.iloc[:,4:304])
 
     feedbacks['label'] = cluster_labels
-
-
-    k = 5
-    nbrs = NearestNeighbors(n_neighbors=k).fit(feedbacks.iloc[:, 4:304])
-    distances, indices = nbrs.kneighbors(feedbacks.iloc[:, 4:304])
-    distances = np.sort(distances[:, k - 1], axis=0)
     result = feedbacks[['label','decompos']].groupby('label')['decompos'].apply(most_common_word).reset_index()
-
     result.columns = ['label', 'most_common_word']
 
     # Проверка результата
@@ -103,5 +98,3 @@ def model(file_buffer):
 
     word_counts = feedbacks['most_common_word'].value_counts().to_dict()
     return word_counts
-
-print(model('dataset1000.csv'))
